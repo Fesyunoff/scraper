@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fesyunoff/availability/pkg/api/service"
+	"github.com/fesyunoff/availability/pkg/types"
 	"github.com/go-kit/kit/metrics"
 	prometheus2 "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,6 +67,14 @@ func (s *ScraperRequestInstrumentingMiddleware) GetResponceTime(ctx context.Cont
 		s.opts.requestLatency.With("method", "GetResponceTime").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 	return s.next.GetResponceTime(ctx, limit)
+}
+
+func (s *ScraperRequestInstrumentingMiddleware) GetStatistics(ctx context.Context, hours string, limit string) ([]types.Stat, error) {
+	defer func(begin time.Time) {
+		s.opts.requestCount.With("method", "GetStatistics").Add(1)
+		s.opts.requestLatency.With("method", "GetStatistics").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+	return s.next.GetStatistics(ctx, hours, limit)
 }
 
 func NewInstrumentingScraperRequestMiddleware(s service.ScraperRequest, opts ...InstrumentingOption) service.ScraperRequest {

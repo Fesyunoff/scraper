@@ -39,3 +39,15 @@ func (f *ScraperRequestEndpointFactory) GetResponceTimeEndpointFactory(instance 
 	return makeScraperRequestGetResponceTimeEndpoint(c), nil, nil
 
 }
+
+func (f *ScraperRequestEndpointFactory) GetStatisticsEndpointFactory(instance string) (endpoint.Endpoint, io.Closer, error) {
+	if f.Path != "" {
+		instance = strings.TrimRight(instance, "/") + "/" + strings.TrimLeft(f.Path, "/")
+	}
+	c, err := NewClientREST(instance, f.Option...)
+	if err != nil {
+		return nil, nil, err
+	}
+	return makeScraperRequestGetStatisticsEndpoint(c), nil, nil
+
+}

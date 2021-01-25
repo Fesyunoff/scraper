@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fesyunoff/availability/pkg/api/service"
+	"github.com/fesyunoff/availability/pkg/types"
 	"github.com/go-kit/kit/log"
 )
 
@@ -46,6 +47,22 @@ func (s *ScraperRequestLoggingMiddleware) GetResponceTime(ctx context.Context, l
 		s.logger.Log("method", "GetResponceTime", "took", time.Since(now), "limit", limit, "result", result, "err", logErr)
 	}(time.Now())
 	result, err = s.next.GetResponceTime(ctx, limit)
+	return result, err
+}
+
+func (s *ScraperRequestLoggingMiddleware) GetStatistics(ctx context.Context, hours string, limit string) ([]types.Stat, error) {
+	var (
+		result []types.Stat
+		err    error
+	)
+	defer func(now time.Time) {
+		logErr := err
+		if le, ok := err.(interface{ LogError() error }); ok {
+			logErr = le.LogError()
+		}
+		s.logger.Log("method", "GetStatistics", "took", time.Since(now), "hours", hours, "limit", limit, "result", len(result), "err", logErr)
+	}(time.Now())
+	result, err = s.next.GetStatistics(ctx, hours, limit)
 	return result, err
 }
 

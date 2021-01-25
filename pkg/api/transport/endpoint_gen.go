@@ -35,15 +35,29 @@ func makeScraperRequestGetResponceTimeEndpoint(s service.ScraperRequest) endpoin
 
 }
 
+func makeScraperRequestGetStatisticsEndpoint(s service.ScraperRequest) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetStatisticsRequest)
+		result, err := s.GetStatistics(ctx, req.Hours, req.Limit)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
+
+}
+
 type ScraperRequestEndpointSet struct {
 	GetAvailabilityEndpoint endpoint.Endpoint
 	GetResponceTimeEndpoint endpoint.Endpoint
+	GetStatisticsEndpoint   endpoint.Endpoint
 }
 
 func MakeScraperRequestEndpointSet(svc service.ScraperRequest) ScraperRequestEndpointSet {
 	return ScraperRequestEndpointSet{
 		GetAvailabilityEndpoint: makeScraperRequestGetAvailabilityEndpoint(svc),
 		GetResponceTimeEndpoint: makeScraperRequestGetResponceTimeEndpoint(svc),
+		GetStatisticsEndpoint:   makeScraperRequestGetStatisticsEndpoint(svc),
 	}
 }
 
@@ -51,5 +65,9 @@ type GetAvailabilityRequest struct {
 	Site string `json:"site"`
 }
 type GetResponceTimeRequest struct {
+	Limit string `json:"limit"`
+}
+type GetStatisticsRequest struct {
+	Hours string `json:"hours"`
 	Limit string `json:"limit"`
 }

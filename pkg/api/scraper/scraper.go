@@ -3,14 +3,16 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/fesyunoff/availability/pkg/api/service"
 	"github.com/fesyunoff/availability/pkg/storage"
+	"github.com/fesyunoff/availability/pkg/types"
 )
 
 type Scraper struct {
-	db *storage.SQLiteScraperStorage
+	db *storage.PostgreScraperStorage
 }
 
 var _ service.ScraperRequest = (*Scraper)(nil)
@@ -19,7 +21,7 @@ func (s *Scraper) GetAvailability(ctx context.Context, site string) (responce st
 	row, err := s.db.DisplayServiceAvailability(s.db.Conn, site)
 	t := time.Unix(row.Date, 0)
 	// t_str := t.
-	if row.Responce == 0 {
+	if !row.Responce {
 		responce = fmt.Sprintf("%+v: Service %s is not available (ERROR: timeout)", t, site)
 	} else {
 		responce = fmt.Sprintf("%+v: Service %s return status code: %d at %d ms", t, site, row.StatusCode, row.Duration)
@@ -52,7 +54,13 @@ func (s *Scraper) GetResponceTime(ctx context.Context, limit string) (responce s
 	}
 }
 
-func NewScraper(db *storage.SQLiteScraperStorage) *Scraper {
+func (s *Scraper) GetStatistics(ctx context.Context, h string, lim string) (responce []types.Stat, err error) {
+	hours, _ := strconv.ParseInt(h, 10, 64)
+	limit, _ := strconv.Atoi(lim)
+	return s.db.DisplayStatistics(s.db.Conn, hours, limit)
+}
+
+func NewScraper(db *storage.PostgreScraperStorage) *Scraper {
 	return &Scraper{
 		db: db,
 	}

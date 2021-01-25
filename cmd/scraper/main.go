@@ -27,11 +27,15 @@ var (
 )
 
 type config struct {
-	file    string
-	dbName  string
-	timeout int
-	proxy   string
-	time    int
+	file     string
+	host     string
+	port     int
+	user     string
+	password string
+	dbname   string
+	timeout  int
+	proxy    string
+	time     int
 }
 
 func main() {
@@ -46,17 +50,25 @@ func main() {
 
 	flag.Parse()
 	c := &config{
-		file:    *fileName,
-		dbName:  "availability.db",
-		timeout: 10,
-		time:    60,
+		file:     *fileName,
+		host:     "172.18.0.2",
+		port:     5432,
+		user:     "user",
+		password: "pass",
+		dbname:   "postgres",
+		timeout:  10,
+		time:     60,
 	}
 
 	sites := getSitesFromFile(c.file)
-	sqliteDB := storage.CreateSQLiteDB(c.dbName, sites)
-	defer sqliteDB.Close()
-
-	strg := storage.NewSQLiteScrapeStorage(sqliteDB)
+	connStatement := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c.host, c.port, c.user, c.password, c.dbname)
+	connDB, err := sql.Open("postgres", connStatement)
+	if err != nil {
+		panic(err)
+	}
+	defer connDB.Close()
+	strg := storage.NewPostgreScrapeStorage(connDB)
+	storage.PreparePostgresDB(connDB, "", sites)
 	svc := scraper.NewScraper(strg)
 	svcHandlers, err := transport.MakeHandlerREST(svc)
 
@@ -85,7 +97,7 @@ func main() {
 
 		go func(site string) {
 			for {
-				testSite(site, c, sqliteDB)
+				testSite(site, c, connDB)
 				time.Sleep(time.Duration(c.time) * time.Second)
 			}
 			ch <- 1
@@ -123,7 +135,7 @@ func testSite(site string, c *config, db *sql.DB) bool {
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("ERROR: ", err)
-		row.Responce = 0
+		row.Responce = false
 		// row.Duration = c.timeout
 		err = storage.WriteResponceToStorage(db, row)
 		if err != nil {
@@ -134,7 +146,7 @@ func testSite(site string, c *config, db *sql.DB) bool {
 	time := time.Since(start).Milliseconds()
 	_, err = ioutil.ReadAll(resp.Body)
 	if err == nil {
-		row.Responce = 1
+		row.Responce = true
 		row.Duration = time
 		row.StatusCode = resp.StatusCode
 		err = storage.WriteResponceToStorage(db, row)

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/fesyunoff/availability/pkg/api/service"
+	"github.com/fesyunoff/availability/pkg/types"
 	"github.com/go-kit/kit/transport/http"
 	"github.com/pquerna/ffjson/ffjson"
 )
@@ -107,5 +108,41 @@ func NewClientREST(tgt string, options ...ClientOption) (service.ScraperRequest,
 		append(opts.genericClientOption, opts.scraperRequestGetResponceTimeClientOption...)...,
 	).Endpoint()
 	c.getResponceTimeEndpoint = middlewareChain(append(opts.genericEndpointMiddleware, opts.scraperRequestGetResponceTimeEndpointMiddleware...))(c.getResponceTimeEndpoint)
+	c.getStatisticsEndpoint = http.NewClient(
+		http2.MethodGet,
+		u,
+		func(_ context.Context, r *http2.Request, request interface{}) error {
+			req, ok := request.(GetStatisticsRequest)
+			if !ok {
+				return fmt.Errorf("couldn't assert request as GetStatisticsRequest, got %T", request)
+			}
+			r.Method = http2.MethodGet
+			r.URL.Path += "/getStatistics"
+			q := r.URL.Query()
+			hoursStr := req.Hours
+			q.Add("hours", hoursStr)
+			limitStr := req.Limit
+			q.Add("limit", limitStr)
+			r.URL.RawQuery = q.Encode()
+			return nil
+		},
+		func(_ context.Context, r *http2.Response) (interface{}, error) {
+			if statusCode := r.StatusCode; statusCode != http2.StatusOK {
+				return nil, ErrorDecode(statusCode)
+			}
+			var resp []types.Stat
+			b, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				return nil, err
+			}
+			err = ffjson.Unmarshal(b, &resp)
+			if err != nil && err != io.EOF {
+				return nil, fmt.Errorf("couldn't unmarshal body to GetStatisticsRequest: %s", err)
+			}
+			return resp, nil
+		},
+		append(opts.genericClientOption, opts.scraperRequestGetStatisticsClientOption...)...,
+	).Endpoint()
+	c.getStatisticsEndpoint = middlewareChain(append(opts.genericEndpointMiddleware, opts.scraperRequestGetStatisticsEndpointMiddleware...))(c.getStatisticsEndpoint)
 	return c, nil
 }

@@ -75,6 +75,7 @@ func MakeHandlerREST(svcScraperRequest service.ScraperRequest, options ...Server
 	epSet := MakeScraperRequestEndpointSet(svcScraperRequest)
 	epSet.GetAvailabilityEndpoint = middlewareChain(append(opts.genericEndpointMiddleware, opts.scraperRequestGetAvailabilityEndpointMiddleware...))(epSet.GetAvailabilityEndpoint)
 	epSet.GetResponceTimeEndpoint = middlewareChain(append(opts.genericEndpointMiddleware, opts.scraperRequestGetResponceTimeEndpointMiddleware...))(epSet.GetResponceTimeEndpoint)
+	epSet.GetStatisticsEndpoint = middlewareChain(append(opts.genericEndpointMiddleware, opts.scraperRequestGetStatisticsEndpointMiddleware...))(epSet.GetStatisticsEndpoint)
 	r := mux.NewRouter()
 	r.Methods(http2.MethodGet).Path("/getAvailability").Handler(http.NewServer(
 		epSet.GetAvailabilityEndpoint,
@@ -97,6 +98,18 @@ func MakeHandlerREST(svcScraperRequest service.ScraperRequest, options ...Server
 		},
 		encodeResponseHTTP,
 		append(opts.genericServerOption, opts.scraperRequestGetResponceTimeServerOption...)...,
+	))
+	r.Methods(http2.MethodGet).Path("/getStatistics").Handler(http.NewServer(
+		epSet.GetStatisticsEndpoint,
+		func(ctx context.Context, r *http2.Request) (interface{}, error) {
+			var req GetStatisticsRequest
+			q := r.URL.Query()
+			req.Hours = q.Get("hours")
+			req.Limit = q.Get("limit")
+			return req, nil
+		},
+		encodeResponseHTTP,
+		append(opts.genericServerOption, opts.scraperRequestGetStatisticsServerOption...)...,
 	))
 	return r, nil
 }

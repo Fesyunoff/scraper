@@ -36,6 +36,13 @@ func Swipe() {
 				Logging(true),
 			),
 
+			MethodOptions(service.ScraperRequest.GetStatistics,
+				RESTPath("/getStatistics"),
+				RESTQueryVars([]string{"hours", "hours", "limit", "limit"}),
+				RESTMethod(http.MethodGet),
+				Logging(true),
+			),
+
 			MethodDefaultOptions(Logging(false), Instrumenting(true)),
 		),
 	)

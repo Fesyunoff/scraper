@@ -58,6 +58,8 @@ type serverOpts struct {
 	scraperRequestGetAvailabilityEndpointMiddleware []endpoint.Middleware
 	scraperRequestGetResponceTimeServerOption       []http.ServerOption
 	scraperRequestGetResponceTimeEndpointMiddleware []endpoint.Middleware
+	scraperRequestGetStatisticsServerOption         []http.ServerOption
+	scraperRequestGetStatisticsEndpointMiddleware   []endpoint.Middleware
 }
 
 func ScraperRequestGetAvailabilityServerOptions(opt ...http.ServerOption) ServerOption {
@@ -74,4 +76,12 @@ func ScraperRequestGetResponceTimeServerOptions(opt ...http.ServerOption) Server
 
 func ScraperRequestGetResponceTimeServerEndpointMiddlewares(opt ...endpoint.Middleware) ServerOption {
 	return func(c *serverOpts) { c.scraperRequestGetResponceTimeEndpointMiddleware = opt }
+}
+
+func ScraperRequestGetStatisticsServerOptions(opt ...http.ServerOption) ServerOption {
+	return func(c *serverOpts) { c.scraperRequestGetStatisticsServerOption = opt }
+}
+
+func ScraperRequestGetStatisticsServerEndpointMiddlewares(opt ...endpoint.Middleware) ServerOption {
+	return func(c *serverOpts) { c.scraperRequestGetStatisticsEndpointMiddleware = opt }
 }

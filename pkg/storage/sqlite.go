@@ -1,5 +1,6 @@
 package storage
 
+/*
 import (
 	"database/sql"
 	"fmt"
@@ -16,7 +17,7 @@ type SQLiteScraperStorage struct {
 
 var _ ScraperStorage = (*SQLiteScraperStorage)(nil)
 
-func CreateSQLiteDB(name string, sites []string) (sqliteDB *sql.DB) {
+func CreatePostgreDB(name string, sites []string) (sqliteDB *sql.DB) {
 	path := fmt.Sprintf("./%s", name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		log.Printf("Creating %s...", name)
@@ -42,7 +43,7 @@ func CreateSQLiteDB(name string, sites []string) (sqliteDB *sql.DB) {
 
 func createTables(db *sql.DB, sites []string) {
 	createTableReq := `CREATE TABLE IF NOT EXISTS availability (
-		--"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,		
+		--"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
 		--"service" TEXT,
 		"service" TEXT NOT NULL PRIMARY KEY,
 		"date" INTEGER,
@@ -52,15 +53,16 @@ func createTables(db *sql.DB, sites []string) {
 	  );`
 	createNewTable(db, "availability", sites, createTableReq)
 
-	// createUserTableReq := `CREATE TABLE IF NOT EXISTS users (
-	// "user_id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	// "name" TEXT,
-	// "role" TEXT
-	// );`
-	// createNewTable(db, "users", createUserTableReq)
+	createTableReq = `CREATE TABLE IF NOT EXISTS requests (
+	"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	"date" INTEGER,
+	"service" TEXT,
+	"user" TEXT
+	);`
+	createTableIfNotExist(db, "requests", createTableReq)
 }
 
-func createTableIfNotExist(db *sql.DB, name string, sites []string, createReq string) {
+func createTableIfNotExist(db *sql.DB, name string, createReq string) {
 	existReq := fmt.Sprintf("SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = '%s';", name)
 	row := db.QueryRow(existReq)
 	var a int
@@ -80,14 +82,7 @@ func createTableIfNotExist(db *sql.DB, name string, sites []string, createReq st
 			log.Printf("ERROR: table %s not created", name)
 		} else {
 			log.Printf("Table '%s' created", name)
-			err = prepareTable(db, sites)
-			if err != nil {
-				log.Fatal(err.Error())
-			} else {
-				log.Printf("Table '%s' prepeared", name)
-			}
 		}
-
 	} else {
 		log.Printf("table '%s' exist", name)
 	}
@@ -154,6 +149,20 @@ func WriteResponceToStorage(db *sql.DB, r types.Row) (err error) {
 	return
 }
 
+func writeRequest(db *sql.DB, r types.Request) (err error) {
+
+	req := `INSERT INTO requests(date, service) VALUES (?, ?);`
+	statement, err := db.Prepare(req)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	_, err = statement.Exec(r.Date, r.Service)
+	if err != nil {
+		log.Fatalln(">>", err.Error())
+	}
+	return
+}
+
 func (s *SQLiteScraperStorage) DisplayServiceAvailability(db *sql.DB, site string) (r types.Row, err error) {
 	req := fmt.Sprintf("SELECT * FROM availability WHERE service = '%s';", site)
 	// fmt.Println(req)
@@ -167,6 +176,11 @@ func (s *SQLiteScraperStorage) DisplayServiceAvailability(db *sql.DB, site strin
 		if err != nil {
 			log.Fatal(err)
 		}
+		req := &types.Request{
+			Date:    r.Date,
+			Service: r.Service,
+		}
+		err = writeRequest(db, *req)
 		// fmt.Println(r)
 	}
 	return
@@ -179,7 +193,7 @@ func (s *SQLiteScraperStorage) DisplayServiceResponceTime(db *sql.DB, min bool) 
 	}
 	req := fmt.Sprintf(`SELECT * FROM  availability
 											WHERE duration != 0
-											ORDER BY duration 
+											ORDER BY duration
 											%sDESC
 											LIMIT 1;`, hyphen)
 	fmt.Println(req)
@@ -204,3 +218,4 @@ func NewSQLiteScrapeStorage(conn *sql.DB) *SQLiteScraperStorage {
 		Conn: conn,
 	}
 }
+*/
