@@ -22,12 +22,15 @@ func PreparePostgresDB(db *sql.DB, name string, sites []string) {
 	result, err := db.Exec(req)
 	CheckError(result, err, "Schema created")
 
-	req = fmt.Sprintf(`DROP TABLE IF EXISTS %s.%s;`, "availability", "responces")
+	req = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s_temp (
+	"service" VARCHAR(20) NOT NULL 
+	);`, "availability", "responces")
 	result, err = db.Exec(req)
-	CheckError(result, err, "Table 'responces' dropped")
+	CheckError(result, err, "Temporary table 'responces' created")
 
 	req = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s (
-	"service" VARCHAR(20) NOT NULL PRIMARY KEY,
+	"id" SERIAL PRIMARY KEY,
+	"service" VARCHAR(20) NOT NULL UNIQUE,
 	"date" INTEGER,
 	"responce" BOOLEAN,
 	"status" SMALLINT,
@@ -36,8 +39,12 @@ func PreparePostgresDB(db *sql.DB, name string, sites []string) {
 	result, err = db.Exec(req)
 	CheckError(result, err, "Table 'responces' created")
 
-	err = prepareTable(db, sites)
+	result, err = prepareTable(db, sites)
 	CheckError(result, err, "Table 'responces' prepeared")
+
+	req = fmt.Sprintf(`DROP TABLE IF EXISTS %s.%s_temp;`, "availability", "responces")
+	result, err = db.Exec(req)
+	CheckError(result, err, "Temporary table 'responces' dropped")
 
 	req = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s (
 	"id" SERIAL PRIMARY KEY,
@@ -57,19 +64,30 @@ func CheckError(result sql.Result, err error, msg string) {
 		log.Printf("%s. %d rows affected.", msg, rows)
 	}
 }
-func prepareTable(db *sql.DB, sites []string) (err error) {
+func prepareTable(db *sql.DB, sites []string) (result sql.Result, err error) {
 	for _, site := range sites {
 		if site == "" {
 			continue
 		}
 
-		req := fmt.Sprintf(`INSERT INTO %s.%s (service) VALUES ('%s');`,
+		req := fmt.Sprintf(`INSERT INTO %s.%s_temp (service) VALUES ('%s');`,
 			"availability", "responces", site)
-		// fmt.Println(req)
 		_, err = db.Exec(req)
 		if err != nil {
 			log.Fatalln(err.Error())
 		}
+
+	}
+	req := fmt.Sprintf(`INSERT INTO %[1]s.%[2]s (service)
+						SELECT DISTINCT service FROM %[1]s.%[2]s_temp
+						WHERE  service NOT IN (
+							SELECT service 
+							FROM %[1]s.%[2]s
+						);`,
+		"availability", "responces")
+	result, err = db.Exec(req)
+	if err != nil {
+		log.Fatalln(err.Error())
 	}
 	return
 }
