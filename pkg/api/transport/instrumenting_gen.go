@@ -53,28 +53,28 @@ type ScraperRequestInstrumentingMiddleware struct {
 	opts *instrumentingOpts
 }
 
-func (s *ScraperRequestInstrumentingMiddleware) GetAvailability(ctx context.Context, site string) (string, error) {
+func (s *ScraperRequestInstrumentingMiddleware) GetAvailability(ctx context.Context, site string, id string) (string, error) {
 	defer func(begin time.Time) {
 		s.opts.requestCount.With("method", "GetAvailability").Add(1)
 		s.opts.requestLatency.With("method", "GetAvailability").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return s.next.GetAvailability(ctx, site)
+	return s.next.GetAvailability(ctx, site, id)
 }
 
-func (s *ScraperRequestInstrumentingMiddleware) GetResponceTime(ctx context.Context, limit string) (string, error) {
+func (s *ScraperRequestInstrumentingMiddleware) GetResponceTime(ctx context.Context, limit string, id string) (string, error) {
 	defer func(begin time.Time) {
 		s.opts.requestCount.With("method", "GetResponceTime").Add(1)
 		s.opts.requestLatency.With("method", "GetResponceTime").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return s.next.GetResponceTime(ctx, limit)
+	return s.next.GetResponceTime(ctx, limit, id)
 }
 
-func (s *ScraperRequestInstrumentingMiddleware) GetStatistics(ctx context.Context, hours string, limit string) ([]types.Stat, error) {
+func (s *ScraperRequestInstrumentingMiddleware) GetStatistics(ctx context.Context, hours string, limit string, id string) ([]types.Stat, error) {
 	defer func(begin time.Time) {
 		s.opts.requestCount.With("method", "GetStatistics").Add(1)
 		s.opts.requestLatency.With("method", "GetStatistics").Observe(time.Since(begin).Seconds())
 	}(time.Now())
-	return s.next.GetStatistics(ctx, hours, limit)
+	return s.next.GetStatistics(ctx, hours, limit, id)
 }
 
 func NewInstrumentingScraperRequestMiddleware(s service.ScraperRequest, opts ...InstrumentingOption) service.ScraperRequest {

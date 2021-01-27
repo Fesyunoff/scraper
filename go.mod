@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/go-kit/kit v0.10.0
 	github.com/gorilla/mux v1.7.3
+	github.com/l-vitaly/go-kit v1.13.0
 	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7

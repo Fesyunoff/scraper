@@ -62,8 +62,8 @@ type clientScraperRequest struct {
 	getStatisticsEndpoint   endpoint.Endpoint
 }
 
-func (c *clientScraperRequest) GetAvailability(ctx context.Context, site string) (string, error) {
-	resp, err := c.getAvailabilityEndpoint(ctx, GetAvailabilityRequest{Site: site})
+func (c *clientScraperRequest) GetAvailability(ctx context.Context, site string, id string) (string, error) {
+	resp, err := c.getAvailabilityEndpoint(ctx, GetAvailabilityRequest{Site: site, Id: id})
 	if err != nil {
 		return "", err
 	}
@@ -71,8 +71,8 @@ func (c *clientScraperRequest) GetAvailability(ctx context.Context, site string)
 	return response, nil
 }
 
-func (c *clientScraperRequest) GetResponceTime(ctx context.Context, limit string) (string, error) {
-	resp, err := c.getResponceTimeEndpoint(ctx, GetResponceTimeRequest{Limit: limit})
+func (c *clientScraperRequest) GetResponceTime(ctx context.Context, limit string, id string) (string, error) {
+	resp, err := c.getResponceTimeEndpoint(ctx, GetResponceTimeRequest{Limit: limit, Id: id})
 	if err != nil {
 		return "", err
 	}
@@ -80,8 +80,8 @@ func (c *clientScraperRequest) GetResponceTime(ctx context.Context, limit string
 	return response, nil
 }
 
-func (c *clientScraperRequest) GetStatistics(ctx context.Context, hours string, limit string) ([]types.Stat, error) {
-	resp, err := c.getStatisticsEndpoint(ctx, GetStatisticsRequest{Hours: hours, Limit: limit})
+func (c *clientScraperRequest) GetStatistics(ctx context.Context, hours string, limit string, id string) ([]types.Stat, error) {
+	resp, err := c.getStatisticsEndpoint(ctx, GetStatisticsRequest{Hours: hours, Limit: limit, Id: id})
 	if err != nil {
 		return nil, err
 	}

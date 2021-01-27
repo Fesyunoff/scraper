@@ -2,7 +2,9 @@ package scraper
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -17,7 +19,15 @@ type Scraper struct {
 
 var _ service.ScraperRequest = (*Scraper)(nil)
 
-func (s *Scraper) GetAvailability(ctx context.Context, site string) (responce string, err error) {
+func (s *Scraper) GetAvailability(ctx context.Context, site string, id string) (responce string, err error) {
+	userId, _ := strconv.Atoi(id)
+	_, err = s.db.ReturnUsersRole(s.db.Conn, userId)
+	if err != nil {
+		err = errors.New("ERROR: permission denied")
+		log.Println(err)
+		return
+	}
+
 	row, err := s.db.DisplayServiceAvailability(s.db.Conn, site)
 	t := time.Unix(row.Date, 0)
 	// t_str := t.
@@ -29,7 +39,15 @@ func (s *Scraper) GetAvailability(ctx context.Context, site string) (responce st
 	return
 }
 
-func (s *Scraper) GetResponceTime(ctx context.Context, limit string) (responce string, err error) {
+func (s *Scraper) GetResponceTime(ctx context.Context, limit string, id string) (responce string, err error) {
+	userId, _ := strconv.Atoi(id)
+	_, err = s.db.ReturnUsersRole(s.db.Conn, userId)
+	if err != nil {
+		err = errors.New("ERROR: permission denied")
+		log.Println(err)
+		return
+	}
+
 	switch limit {
 	case "min":
 		min := true
@@ -54,10 +72,18 @@ func (s *Scraper) GetResponceTime(ctx context.Context, limit string) (responce s
 	}
 }
 
-func (s *Scraper) GetStatistics(ctx context.Context, h string, lim string) (responce []types.Stat, err error) {
+func (s *Scraper) GetStatistics(ctx context.Context, h string, lim string, id string) (responce []types.Stat, err error) {
+	userId, _ := strconv.Atoi(id)
+	admin, err := s.db.ReturnUsersRole(s.db.Conn, userId)
+	if err != nil || !admin {
+		err = errors.New("ERROR: permission denied")
+		log.Println(err)
+		return
+	}
+
 	hours, _ := strconv.ParseInt(h, 10, 64)
 	limit, _ := strconv.Atoi(lim)
-	return s.db.DisplayStatistics(s.db.Conn, hours, limit)
+	return s.db.DisplayStatistics(s.db.Conn, s.db.Conf, hours, limit)
 }
 
 func NewScraper(db *storage.PostgreScraperStorage) *Scraper {

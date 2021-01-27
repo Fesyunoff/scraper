@@ -20,12 +20,13 @@ func Swipe() {
 			OpenapiEnable(),
 			OpenapiOutput("./"),
 
-			ReadmeEnable(),
+			// ReadmeEnable(),
 
 			MethodOptions(service.ScraperRequest.GetAvailability,
 				RESTPath("/getAvailability"),
 				RESTQueryVars([]string{"site", "site"}),
 				RESTMethod(http.MethodGet),
+				RESTHeaderVars([]string{"id", "X-User-Id"}),
 				Logging(true),
 			),
 
@@ -33,6 +34,7 @@ func Swipe() {
 				RESTPath("/getResponceTime"),
 				RESTQueryVars([]string{"limit", "limit"}),
 				RESTMethod(http.MethodGet),
+				RESTHeaderVars([]string{"id", "X-User-Id"}),
 				Logging(true),
 			),
 
@@ -40,6 +42,7 @@ func Swipe() {
 				RESTPath("/getStatistics"),
 				RESTQueryVars([]string{"hours", "hours", "limit", "limit"}),
 				RESTMethod(http.MethodGet),
+				RESTHeaderVars([]string{"id", "X-User-Id"}),
 				Logging(true),
 			),
 

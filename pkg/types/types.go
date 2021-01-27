@@ -1,6 +1,27 @@
 package types
 
+type Config struct {
+	FileName        string
+	Host            string
+	Port            int
+	Timeout         int
+	Proxy           string
+	Time            int
+	HostDB          string
+	PortDB          int
+	UserDB          string
+	PasswordDB      string
+	NameDB          string
+	SchemaName      string
+	RespTableName   string
+	ReqTableName    string
+	UsrTableName    string
+	StatHoursBefore int64
+	StatLimit       int
+}
+
 type Row struct {
+	Id         int
 	Service    string
 	Date       int64
 	Responce   bool
@@ -15,6 +36,6 @@ type Request struct {
 }
 
 type Stat struct {
-	Service string
-	Count   int
+	Service string `json:"service"`
+	Count   int    `json:"count"`
 }

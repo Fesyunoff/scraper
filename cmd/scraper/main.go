@@ -26,18 +26,6 @@ var (
 	fileName = flag.String("file", "sites.txt", "name of file with servises list")
 )
 
-type config struct {
-	file     string
-	host     string
-	port     int
-	user     string
-	password string
-	dbname   string
-	timeout  int
-	proxy    string
-	time     int
-}
-
 func main() {
 
 	sigint := make(chan os.Signal, 1)
@@ -49,30 +37,38 @@ func main() {
 	logger = kitlog.With(logger, "caller", kitlog.Caller(5))
 
 	flag.Parse()
-	c := &config{
-		file:     *fileName,
-		host:     "172.18.0.2",
-		port:     5432,
-		user:     "user",
-		password: "pass",
-		dbname:   "postgres",
-		timeout:  10,
-		time:     60,
+	c := &types.Config{
+		Host:            "0.0.0.0",
+		Port:            8991,
+		FileName:        *fileName,
+		Timeout:         10, //second
+		Time:            60, //second
+		HostDB:          "172.18.0.2",
+		PortDB:          5432,
+		UserDB:          "user",
+		PasswordDB:      "pass",
+		NameDB:          "postgres",
+		SchemaName:      "availability",
+		RespTableName:   "responces",
+		ReqTableName:    "requests",
+		UsrTableName:    "users",
+		StatHoursBefore: 24,
+		StatLimit:       50,
 	}
 
-	sites := getSitesFromFile(c.file)
-	connStatement := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c.host, c.port, c.user, c.password, c.dbname)
+	sites := getSitesFromFile(c.FileName)
+	connStatement := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c.HostDB, c.PortDB, c.UserDB, c.PasswordDB, c.NameDB)
 	connDB, err := sql.Open("postgres", connStatement)
 	if err != nil {
 		panic(err)
 	}
 	defer connDB.Close()
-	strg := storage.NewPostgreScrapeStorage(connDB)
-	storage.PreparePostgresDB(connDB, "", sites)
+	strg := storage.NewPostgreScrapeStorage(connDB, c)
+	storage.PreparePostgresDB(connDB, c, sites)
 	svc := scraper.NewScraper(strg)
 	svcHandlers, err := transport.MakeHandlerREST(svc)
 
-	bindAddr := fmt.Sprintf("%s:%d", "0.0.0.0", 8991)
+	bindAddr := fmt.Sprintf("%s:%d", c.Host, c.Port)
 	r := mux.NewRouter().StrictSlash(true)
 
 	exitOnError(logger, err, "failed create handlers")
@@ -98,7 +94,7 @@ func main() {
 		go func(site string) {
 			for {
 				testSite(site, c, connDB)
-				time.Sleep(time.Duration(c.time) * time.Second)
+				time.Sleep(time.Duration(c.Time) * time.Second)
 			}
 			ch <- 1
 		}(site)
@@ -109,18 +105,18 @@ func main() {
 
 }
 
-func testSite(site string, c *config, db *sql.DB) bool {
+func testSite(site string, c *types.Config, db *sql.DB) bool {
 	row := types.Row{}
 	if site == "" {
 		return false
 	}
 	row.Service = site
 	client := http.Client{
-		Timeout: time.Duration(c.timeout) * time.Second,
+		Timeout: time.Duration(c.Timeout) * time.Second,
 	}
 
-	if c.proxy != "" {
-		proxyUrl, _ := url.Parse(c.proxy)
+	if c.Proxy != "" {
+		proxyUrl, _ := url.Parse(c.Proxy)
 		transport := http.Transport{Proxy: http.ProxyURL(proxyUrl)}
 		client = http.Client{Transport: &transport}
 	}
@@ -134,9 +130,7 @@ func testSite(site string, c *config, db *sql.DB) bool {
 	row.Date = start.Unix()
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("ERROR: ", err)
 		row.Responce = false
-		// row.Duration = c.timeout
 		err = storage.WriteResponceToStorage(db, row)
 		if err != nil {
 			fmt.Println("ERROR: ", err)
@@ -149,15 +143,7 @@ func testSite(site string, c *config, db *sql.DB) bool {
 		row.Responce = true
 		row.Duration = time
 		row.StatusCode = resp.StatusCode
-		err = storage.WriteResponceToStorage(db, row)
-		if err != nil {
-			fmt.Println("ERROR: ", err)
-		}
-		// if resp.StatusCode == 200 {
-		// fmt.Printf("%s: ok, time: %d ms\n", site, time)
-		// } else {
-		// fmt.Printf("%s return error: code: %d\n", site, resp.StatusCode)
-		// }
+		_ = storage.WriteResponceToStorage(db, row)
 	}
 
 	defer resp.Body.Close()

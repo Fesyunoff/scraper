@@ -18,7 +18,7 @@ type ScraperRequestLoggingMiddleware struct {
 	logger log.Logger
 }
 
-func (s *ScraperRequestLoggingMiddleware) GetAvailability(ctx context.Context, site string) (string, error) {
+func (s *ScraperRequestLoggingMiddleware) GetAvailability(ctx context.Context, site string, id string) (string, error) {
 	var (
 		result string
 		err    error
@@ -28,13 +28,13 @@ func (s *ScraperRequestLoggingMiddleware) GetAvailability(ctx context.Context, s
 		if le, ok := err.(interface{ LogError() error }); ok {
 			logErr = le.LogError()
 		}
-		s.logger.Log("method", "GetAvailability", "took", time.Since(now), "site", site, "result", result, "err", logErr)
+		s.logger.Log("method", "GetAvailability", "took", time.Since(now), "site", site, "id", id, "result", result, "err", logErr)
 	}(time.Now())
-	result, err = s.next.GetAvailability(ctx, site)
+	result, err = s.next.GetAvailability(ctx, site, id)
 	return result, err
 }
 
-func (s *ScraperRequestLoggingMiddleware) GetResponceTime(ctx context.Context, limit string) (string, error) {
+func (s *ScraperRequestLoggingMiddleware) GetResponceTime(ctx context.Context, limit string, id string) (string, error) {
 	var (
 		result string
 		err    error
@@ -44,13 +44,13 @@ func (s *ScraperRequestLoggingMiddleware) GetResponceTime(ctx context.Context, l
 		if le, ok := err.(interface{ LogError() error }); ok {
 			logErr = le.LogError()
 		}
-		s.logger.Log("method", "GetResponceTime", "took", time.Since(now), "limit", limit, "result", result, "err", logErr)
+		s.logger.Log("method", "GetResponceTime", "took", time.Since(now), "limit", limit, "id", id, "result", result, "err", logErr)
 	}(time.Now())
-	result, err = s.next.GetResponceTime(ctx, limit)
+	result, err = s.next.GetResponceTime(ctx, limit, id)
 	return result, err
 }
 
-func (s *ScraperRequestLoggingMiddleware) GetStatistics(ctx context.Context, hours string, limit string) ([]types.Stat, error) {
+func (s *ScraperRequestLoggingMiddleware) GetStatistics(ctx context.Context, hours string, limit string, id string) ([]types.Stat, error) {
 	var (
 		result []types.Stat
 		err    error
@@ -60,9 +60,9 @@ func (s *ScraperRequestLoggingMiddleware) GetStatistics(ctx context.Context, hou
 		if le, ok := err.(interface{ LogError() error }); ok {
 			logErr = le.LogError()
 		}
-		s.logger.Log("method", "GetStatistics", "took", time.Since(now), "hours", hours, "limit", limit, "result", len(result), "err", logErr)
+		s.logger.Log("method", "GetStatistics", "took", time.Since(now), "hours", hours, "limit", limit, "id", id, "result", len(result), "err", logErr)
 	}(time.Now())
-	result, err = s.next.GetStatistics(ctx, hours, limit)
+	result, err = s.next.GetStatistics(ctx, hours, limit, id)
 	return result, err
 }
 

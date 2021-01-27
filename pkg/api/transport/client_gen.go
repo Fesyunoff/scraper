@@ -54,6 +54,8 @@ func NewClientREST(tgt string, options ...ClientOption) (service.ScraperRequest,
 			siteStr := req.Site
 			q.Add("site", siteStr)
 			r.URL.RawQuery = q.Encode()
+			idStr := req.Id
+			r.Header.Add("X-User-Id", idStr)
 			return nil
 		},
 		func(_ context.Context, r *http2.Response) (interface{}, error) {
@@ -88,6 +90,8 @@ func NewClientREST(tgt string, options ...ClientOption) (service.ScraperRequest,
 			limitStr := req.Limit
 			q.Add("limit", limitStr)
 			r.URL.RawQuery = q.Encode()
+			idStr := req.Id
+			r.Header.Add("X-User-Id", idStr)
 			return nil
 		},
 		func(_ context.Context, r *http2.Response) (interface{}, error) {
@@ -124,6 +128,8 @@ func NewClientREST(tgt string, options ...ClientOption) (service.ScraperRequest,
 			limitStr := req.Limit
 			q.Add("limit", limitStr)
 			r.URL.RawQuery = q.Encode()
+			idStr := req.Id
+			r.Header.Add("X-User-Id", idStr)
 			return nil
 		},
 		func(_ context.Context, r *http2.Response) (interface{}, error) {

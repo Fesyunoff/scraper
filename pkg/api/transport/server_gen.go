@@ -83,6 +83,7 @@ func MakeHandlerREST(svcScraperRequest service.ScraperRequest, options ...Server
 			var req GetAvailabilityRequest
 			q := r.URL.Query()
 			req.Site = q.Get("site")
+			req.Id = r.Header.Get("X-User-Id")
 			return req, nil
 		},
 		encodeResponseHTTP,
@@ -94,6 +95,7 @@ func MakeHandlerREST(svcScraperRequest service.ScraperRequest, options ...Server
 			var req GetResponceTimeRequest
 			q := r.URL.Query()
 			req.Limit = q.Get("limit")
+			req.Id = r.Header.Get("X-User-Id")
 			return req, nil
 		},
 		encodeResponseHTTP,
@@ -106,6 +108,7 @@ func MakeHandlerREST(svcScraperRequest service.ScraperRequest, options ...Server
 			q := r.URL.Query()
 			req.Hours = q.Get("hours")
 			req.Limit = q.Get("limit")
+			req.Id = r.Header.Get("X-User-Id")
 			return req, nil
 		},
 		encodeResponseHTTP,

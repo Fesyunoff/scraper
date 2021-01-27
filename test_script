@@ -1,18 +1,24 @@
 curl -v GET  http://localhost:8991/getAvailability?site=google.com
-curl -v GET  http://localhost:8991/getAvailability?site=xvideos.com
-curl -v GET  http://localhost:8991/getAvailability?site=pornhub.com
-curl -v GET  http://localhost:8991/getAvailability?site=google.com
-curl -v GET  http://localhost:8991/getAvailability?site=xvideos.com
-curl -v GET  http://localhost:8991/getAvailability?site=github.com
-curl -v GET  http://localhost:8991/getAvailability?site=pornhub.com
-curl -v GET  http://localhost:8991/getAvailability?site=google.com
-curl -v GET  http://localhost:8991/getAvailability?site=vk.com
-curl -v GET  http://localhost:8991/getAvailability?site=github.com
-curl -v GET  http://localhost:8991/getAvailability?site=google.com
-curl -v GET  http://localhost:8991/getAvailability?site=xvideos.com
-curl -v GET  http://localhost:8991/getAvailability?site=github.com
-curl -v GET  http://localhost:8991/getAvailability?site=pornhub.com
-curl -v GET  http://localhost:8991/getAvailability?site=google.com
-curl -v GET  http://localhost:8991/getResponceTime?limit=max
-curl -v GET  http://localhost:8991/getResponceTime?limit=min
-curl -v GET  http://localhost:8991/getStatistics?hours=0&limit=0
+curl -v GET --header "X-User-Id: 2"  http://localhost:8991/getAvailability?site=xvideos.com
+curl -v GET --header "X-User-Id: 3" http://localhost:8991/getAvailability?site=pornhub.com
+curl -v GET --header "X-User-Id: 3" http://localhost:8991/getAvailability?site=google.com
+curl -v GET --header "X-User-Id: 4" http://localhost:8991/getAvailability?site=google.com
+curl -v GET --header "X-User-Id: 4" http://localhost:8991/getAvailability?site=xvideos.com
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getAvailability?site=github.com
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getAvailability?site=pornhub.com
+curl -v GET --header "X-User-Id: 3" http://localhost:8991/getAvailability?site=google.com
+curl -v GET --header "X-User-Id: 3" http://localhost:8991/getAvailability?site=xvideos.com
+curl -v GET --header "X-User-Id: 4" http://localhost:8991/getAvailability?site=github.com
+curl -v GET --header "X-User-Id: 4" http://localhost:8991/getAvailability?site=pornhub.com
+curl -v GET --header "X-User-Id: 1" http://localhost:8991/getAvailability?site=google.com
+curl -v GET --header "X-User-Id: 1" http://localhost:8991/getAvailability?site=vk.com
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getAvailability?site=github.com
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getAvailability?site=google.com
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getAvailability?site=xvideos.com
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getAvailability?site=github.com
+curl -v GET --header "X-User-Id: 3" http://localhost:8991/getAvailability?site=pornhub.com
+curl -v GET --header "X-User-Id: 3" http://localhost:8991/getAvailability?site=google.com
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getResponceTime?limit=max
+curl -v GET --header "X-User-Id: 1" http://localhost:8991/getResponceTime?limit=min
+curl -v GET --header "X-User-Id: 2" http://localhost:8991/getStatistics?hours=0&limit=0
+curl -v GET --header "X-User-Id: 1" http://localhost:8991/getStatistics?hours=0&limit=0
