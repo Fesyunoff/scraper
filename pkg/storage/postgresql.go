@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/fesyunoff/availability/pkg/types"
@@ -24,14 +25,14 @@ func PreparePostgresDB(db *sql.DB, c *types.Config, sites []string) {
 	CheckError(result, err, "Schema created")
 
 	req = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s_temp (
-	"service" VARCHAR(20) NOT NULL 
+	"service" VARCHAR(60) NOT NULL 
 	);`, c.SchemaName, c.RespTableName)
 	result, err = db.Exec(req)
 	CheckError(result, err, "Temporary responce table created")
 
 	req = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s (
 	"id" SERIAL PRIMARY KEY,
-	"service" VARCHAR(20) NOT NULL UNIQUE,
+	"service" VARCHAR(60) NOT NULL UNIQUE,
 	"date" INTEGER,
 	"responce" BOOLEAN,
 	"status" SMALLINT,
@@ -51,7 +52,7 @@ func PreparePostgresDB(db *sql.DB, c *types.Config, sites []string) {
 	req = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s (
 	"id" SERIAL PRIMARY KEY,
 	"date" INTEGER,
-	"service" VARCHAR(20),
+	"service" VARCHAR(60),
 	"user" SMALLINT
 	);`, c.SchemaName, c.ReqTableName)
 	result, err = db.Exec(req)
@@ -61,12 +62,13 @@ func PreparePostgresDB(db *sql.DB, c *types.Config, sites []string) {
 	CheckError(result, err, "User table created")
 }
 
-func WriteResponceToStorage(db *sql.DB, r types.Row) (err error) {
+func WriteResponceToStorage(db *sql.DB, c *types.Config, r types.Row) (err error) {
 	req := fmt.Sprintf(`UPDATE %s.%s SET 
 	date = %d, responce = %t, status = %d, duration = %d WHERE service = '%s';`,
-		"availability", "responces",
+		c.SchemaName, c.RespTableName,
 		r.Date, r.Responce, r.StatusCode, r.Duration, r.Service)
 	_, err = db.Exec(req)
+	fmt.Println(r.Service)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -75,7 +77,22 @@ func WriteResponceToStorage(db *sql.DB, r types.Row) (err error) {
 
 // return true if admin
 func (s *PostgreScraperStorage) DisplayServiceAvailability(db *sql.DB, site string) (r types.Row, err error) {
-	req := fmt.Sprintf("SELECT * FROM %s.%s WHERE service = '%s';", "availability", "responces", site)
+	var req string
+	if site == "" {
+		var count int
+		req = fmt.Sprintf(`SELECT COUNT(*) FROM %s.%s;`,
+			s.Conf.SchemaName, s.Conf.RespTableName)
+		row := db.QueryRow(req)
+
+		err = row.Scan(&count)
+		if err != nil {
+			log.Println(err)
+		}
+		id := rand.Intn(count)
+		req = fmt.Sprintf("SELECT * FROM %s.%s WHERE id = '%d';", s.Conf.SchemaName, s.Conf.RespTableName, id)
+	} else {
+		req = fmt.Sprintf("SELECT * FROM %s.%s WHERE service = '%s';", s.Conf.SchemaName, s.Conf.RespTableName, site)
+	}
 	row, err := db.Query(req)
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -87,7 +104,7 @@ func (s *PostgreScraperStorage) DisplayServiceAvailability(db *sql.DB, site stri
 			log.Fatalln(err.Error())
 		}
 	}
-	err = writeRequest(db, r.Service)
+	err = writeRequest(db, s.Conf, r.Service)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -104,7 +121,7 @@ func (s *PostgreScraperStorage) DisplayServiceResponceTime(db *sql.DB, min bool)
 											WHERE duration != 0
 											ORDER BY duration 
 											%sDESC
-											LIMIT 1;`, "availability", "responces", hyphen)
+											LIMIT 1;`, s.Conf.SchemaName, s.Conf.RespTableName, hyphen)
 	row, err := db.Query(req)
 	if err != nil {
 		log.Fatal(err)
@@ -136,7 +153,7 @@ func (s *PostgreScraperStorage) DisplayStatistics(db *sql.DB, c *types.Config, h
 			ORDER BY cs DESC 
 			LIMIT %d
 			;`,
-		"availability", "requests",
+		s.Conf.SchemaName, s.Conf.ReqTableName,
 		date, limit)
 	row, err := db.Query(req)
 	if err != nil {
@@ -157,7 +174,7 @@ func (s *PostgreScraperStorage) DisplayStatistics(db *sql.DB, c *types.Config, h
 func (s *PostgreScraperStorage) ReturnUsersRole(db *sql.DB, id int) (admin bool, err error) {
 	req := fmt.Sprintf(`SELECT admin FROM %s.%s 
 			WHERE id=%d;`,
-		"availability", "users", id)
+		s.Conf.SchemaName, s.Conf.UsrTableName, id)
 	row := db.QueryRow(req)
 
 	err = row.Scan(&admin)
@@ -167,10 +184,10 @@ func (s *PostgreScraperStorage) ReturnUsersRole(db *sql.DB, id int) (admin bool,
 	return
 }
 
-func writeRequest(db *sql.DB, service string) (err error) {
+func writeRequest(db *sql.DB, c *types.Config, service string) (err error) {
 	date := time.Now()
 	req := fmt.Sprintf(`INSERT INTO %s.%s(date, service) VALUES (%d, '%s');`,
-		"availability", "requests", date.Unix(), service)
+		c.SchemaName, c.ReqTableName, date.Unix(), service)
 	_, err = db.Exec(req)
 	if err != nil {
 		log.Fatalln(err.Error())
@@ -229,14 +246,10 @@ func createUsersTable(db *sql.DB, c *types.Config) (err error) {
 	row := db.QueryRow(req)
 	var id int
 	err = row.Scan(&id)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if id == 0 {
+	if err != nil || id == 0 {
 		req := fmt.Sprintf(`INSERT INTO %s.%s (admin) VALUES 
 			(true), (false), (false), (false)
 			;`, c.SchemaName, c.UsrTableName)
-		fmt.Println(req)
 		_, err = db.Exec(req)
 		if err != nil {
 			log.Fatalln(err.Error())

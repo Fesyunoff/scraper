@@ -32,9 +32,9 @@ func (s *Scraper) GetAvailability(ctx context.Context, site string, id string) (
 	t := time.Unix(row.Date, 0)
 	// t_str := t.
 	if !row.Responce {
-		responce = fmt.Sprintf("%+v: Service %s is not available (ERROR: timeout)", t, site)
+		responce = fmt.Sprintf("%+v: Service %s is not available (ERROR: responce time out)", t, row.Service)
 	} else {
-		responce = fmt.Sprintf("%+v: Service %s return status code: %d at %d ms", t, site, row.StatusCode, row.Duration)
+		responce = fmt.Sprintf("%+v: Service %s return status code: %d at %d ms", t, row.Service, row.StatusCode, row.Duration)
 	}
 	return
 }

@@ -87,28 +87,40 @@ func main() {
 	go func() {
 		_ = http.Serve(ln, r)
 	}()
-
-	ch := make(chan int, 1)
+	ch := make(chan types.Row, 1)
+	// for {
+	// select {
+	// default:
 	for _, site := range sites {
 
 		go func(site string) {
 			for {
-				testSite(site, c, connDB)
+				resp, row := testSite(site, c)
+				if resp {
+					ch <- row
+				}
 				time.Sleep(time.Duration(c.Time) * time.Second)
 			}
-			ch <- 1
 		}(site)
 	}
-	<-ch
-
+	// <-ch
+	// }
+	// }
+	for {
+		row := <-ch
+		err := storage.WriteResponceToStorage(connDB, c, row)
+		if err != nil {
+			fmt.Println("ERROR: ", err)
+		}
+	}
 	<-sigint
 
 }
 
-func testSite(site string, c *types.Config, db *sql.DB) bool {
+func testSite(site string, c *types.Config) (bool, types.Row) {
 	row := types.Row{}
 	if site == "" {
-		return false
+		return false, row
 	}
 	row.Service = site
 	client := http.Client{
@@ -131,11 +143,12 @@ func testSite(site string, c *types.Config, db *sql.DB) bool {
 	resp, err := client.Do(req)
 	if err != nil {
 		row.Responce = false
-		err = storage.WriteResponceToStorage(db, row)
-		if err != nil {
-			fmt.Println("ERROR: ", err)
-		}
-		return false
+
+		// err = storage.WriteResponceToStorage(db, c, row)
+		// if err != nil {
+		// fmt.Println("ERROR: ", err)
+		// }
+		return true, row
 	}
 	time := time.Since(start).Milliseconds()
 	_, err = ioutil.ReadAll(resp.Body)
@@ -143,11 +156,11 @@ func testSite(site string, c *types.Config, db *sql.DB) bool {
 		row.Responce = true
 		row.Duration = time
 		row.StatusCode = resp.StatusCode
-		_ = storage.WriteResponceToStorage(db, row)
+		// _ = storage.WriteResponceToStorage(db, c, row)
 	}
 
 	defer resp.Body.Close()
-	return true
+	return true, row
 }
 
 func getSitesFromFile(name string) (sites []string) {
