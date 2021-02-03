@@ -24,16 +24,39 @@
 ```
 
 ## Example
+/:
+<code>
+docker-compose up postgres 
+</code>
 
+/:
+<code>
+. .local.env
+<code>
+
+/:
+<code>
+source .local.env
+<code>
 
 Build Service:
 <code>
 go build -o ./bin/scraper ./cmd/scraper/
 </code>
 
+Build tester:
+<code>
+go build -o ./bin/tester ./cmd/tester/
+</code>
+
 Start Service:
 <code>
-./bin/service
+./bin/scraper
+</code>
+
+Start tester:
+<code>
+./bin/tester
 </code>
 
 Test Service:

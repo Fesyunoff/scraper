@@ -1,6 +1,7 @@
 package types
 
 type Config struct {
+	Debug           bool
 	FileName        string
 	Host            string
 	Port            int

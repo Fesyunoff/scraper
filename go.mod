@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/go-kit/kit v0.10.0
 	github.com/gorilla/mux v1.7.3
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/l-vitaly/go-kit v1.13.0
 	github.com/lib/pq v1.8.0
 	github.com/mattn/go-sqlite3 v1.14.6

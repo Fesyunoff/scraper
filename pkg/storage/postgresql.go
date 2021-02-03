@@ -68,9 +68,11 @@ func WriteResponceToStorage(db *sql.DB, c *types.Config, r types.Row) (err error
 		c.SchemaName, c.RespTableName,
 		r.Date, r.Responce, r.StatusCode, r.Duration, r.Service)
 	_, err = db.Exec(req)
-	fmt.Println(r.Service)
 	if err != nil {
 		log.Fatalln(err.Error())
+	}
+	if c.Debug {
+		fmt.Println(r.Service)
 	}
 	return
 }
@@ -143,7 +145,6 @@ func (s *PostgreScraperStorage) DisplayStatistics(db *sql.DB, c *types.Config, h
 		hours = c.StatHoursBefore
 	}
 	date := time.Now().Unix() - hours*3600
-	fmt.Println(date)
 	if limit == 0 {
 		limit = c.StatLimit
 	}

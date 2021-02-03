@@ -4,14 +4,11 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
-	"strings"
-	"time"
 
 	"github.com/fesyunoff/availability/pkg/api/scraper"
 	"github.com/fesyunoff/availability/pkg/api/transport"
@@ -20,10 +17,12 @@ import (
 	kitlog "github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
+	"github.com/kelseyhightower/envconfig"
 )
 
 var (
-	fileName = flag.String("file", "sites.txt", "name of file with servises list")
+	debug = flag.Bool("debug", false, "debug")
+	env   = flag.String("env", "local", "environment")
 )
 
 func main() {
@@ -32,39 +31,27 @@ func main() {
 	signal.Notify(sigint, os.Interrupt)
 
 	logger := kitlog.NewJSONLogger(kitlog.NewSyncWriter(os.Stdout))
-	// logger = kitlog.With(logger, "service", serviceName)
+	logger = kitlog.With(logger, "service", "scraper")
 	logger = kitlog.With(logger, "timestamp", kitlog.DefaultTimestampUTC)
 	logger = kitlog.With(logger, "caller", kitlog.Caller(5))
 
 	flag.Parse()
-	c := &types.Config{
-		Host:            "0.0.0.0",
-		Port:            8991,
-		FileName:        *fileName,
-		Timeout:         10, //second
-		Time:            60, //second
-		HostDB:          "172.18.0.2",
-		PortDB:          5432,
-		UserDB:          "user",
-		PasswordDB:      "pass",
-		NameDB:          "postgres",
-		SchemaName:      "availability",
-		RespTableName:   "responces",
-		ReqTableName:    "requests",
-		UsrTableName:    "users",
-		StatHoursBefore: 24,
-		StatLimit:       50,
+	var c types.Config
+	err := envconfig.Process(*env, &c)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
-
-	sites := getSitesFromFile(c.FileName)
+	c.StatLimit = 50
+	c.StatHoursBefore = 24
+	c.Debug = *debug
+	fmt.Printf("%+v\n", c)
 	connStatement := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", c.HostDB, c.PortDB, c.UserDB, c.PasswordDB, c.NameDB)
 	connDB, err := sql.Open("postgres", connStatement)
 	if err != nil {
 		panic(err)
 	}
 	defer connDB.Close()
-	strg := storage.NewPostgreScrapeStorage(connDB, c)
-	storage.PreparePostgresDB(connDB, c, sites)
+	strg := storage.NewPostgreScrapeStorage(connDB, &c)
 	svc := scraper.NewScraper(strg)
 	svcHandlers, err := transport.MakeHandlerREST(svc)
 
@@ -87,90 +74,8 @@ func main() {
 	go func() {
 		_ = http.Serve(ln, r)
 	}()
-	ch := make(chan types.Row, 1)
-	// for {
-	// select {
-	// default:
-	for _, site := range sites {
-
-		go func(site string) {
-			for {
-				resp, row := testSite(site, c)
-				if resp {
-					ch <- row
-				}
-				time.Sleep(time.Duration(c.Time) * time.Second)
-			}
-		}(site)
-	}
-	// <-ch
-	// }
-	// }
-	for {
-		row := <-ch
-		err := storage.WriteResponceToStorage(connDB, c, row)
-		if err != nil {
-			fmt.Println("ERROR: ", err)
-		}
-	}
 	<-sigint
 
-}
-
-func testSite(site string, c *types.Config) (bool, types.Row) {
-	row := types.Row{}
-	if site == "" {
-		return false, row
-	}
-	row.Service = site
-	client := http.Client{
-		Timeout: time.Duration(c.Timeout) * time.Second,
-	}
-
-	if c.Proxy != "" {
-		proxyUrl, _ := url.Parse(c.Proxy)
-		transport := http.Transport{Proxy: http.ProxyURL(proxyUrl)}
-		client = http.Client{Transport: &transport}
-	}
-
-	site = "http://" + site
-	req, err := http.NewRequest("GET", site, nil)
-	if err != nil {
-		fmt.Println("ERROR: ", err)
-	}
-	start := time.Now()
-	row.Date = start.Unix()
-	resp, err := client.Do(req)
-	if err != nil {
-		row.Responce = false
-
-		// err = storage.WriteResponceToStorage(db, c, row)
-		// if err != nil {
-		// fmt.Println("ERROR: ", err)
-		// }
-		return true, row
-	}
-	time := time.Since(start).Milliseconds()
-	_, err = ioutil.ReadAll(resp.Body)
-	if err == nil {
-		row.Responce = true
-		row.Duration = time
-		row.StatusCode = resp.StatusCode
-		// _ = storage.WriteResponceToStorage(db, c, row)
-	}
-
-	defer resp.Body.Close()
-	return true, row
-}
-
-func getSitesFromFile(name string) (sites []string) {
-	data, err := ioutil.ReadFile(name)
-	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(0)
-	}
-	sites = strings.Split(string(data), "\n")
-	return
 }
 
 func exitOnError(l kitlog.Logger, err error, msg string) {
