@@ -21,50 +21,53 @@
     убыванию популярности (если равно '0' то отображаются первые 50 сервисов))
 - авторизация через --header "X-User-Id: 1" (при запуске создается администаратор с id=1 и 
   и пользователи с id=[2,3,4])
+- поддержка запуска нескольких тестирующих модулей с различными списками для мониторинга 
 ```
 
 ## Example
-/:
+$
 <code>
 docker-compose up postgres 
 </code>
 
-/:
+$
 <code>
 . .local.env
-<code>
+</code>
 
-/:
+$
 <code>
 source .local.env
-<code>
+</code>
 
-Build Service:
+Build Service: 
+
+$
 <code>
 go build -o ./bin/scraper ./cmd/scraper/
 </code>
 
-Build tester:
+$
 <code>
 go build -o ./bin/tester ./cmd/tester/
 </code>
 
-Start Service:
+Start Service: $
 <code>
 ./bin/scraper
 </code>
 
-Start tester:
+$ 
 <code>
 ./bin/tester
 </code>
 
-Test Service:
+Test Service: $
 <code>
 chmod +x ./test_script 
 </code>
 
-
+$
 <code>
 ./test_script
 </code>
